@@ -6,37 +6,43 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+        stage('Clone') {
             steps {
-                git 'https://github.com/kkrish-77/DevOps-Jenk-Project.git'
+                git branch: 'main',
+                    url: 'https://github.com/kkrish-77/DevOps-Jenk-Project.git'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build') {
             steps {
-                sh 'pip install -r requirements.txt'
+                sh 'docker build -t flask-app .'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Deploy') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
-            }
-        }
-
-        stage('Run Container') {
-            steps {
-                // Stop old container if it exists
-                sh 'docker rm -f flask-app || true'
-                // Run new container
-                sh 'docker run -d -p 5000:5000 --name flask-app $IMAGE_NAME'
+                sh '''
+                docker rm -f flask-app || true
+                docker run -d -p 5000:5000 --name flask-app flask-app
+                echo "Application deployed successfully!"
+                '''
             }
         }
     }
 
     post {
         success {
-            echo 'App is running on http://localhost:5000'
+            echo 'Visit http://localhost:5000 to see your application'
+        }
+        failure {
+            script {
+                if (isUnix()) {
+                    sh 'docker rm -f flask-app || true'
+                } else {
+                    bat 'docker rm -f flask-app || true'
+                }
+            }
+            echo 'Pipeline failed! Cleaned up containers.'
         }
     }
 }
