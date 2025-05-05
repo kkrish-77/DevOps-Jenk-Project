@@ -2,12 +2,14 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'flask-app-local'
+        APP_NAME = 'flask-app'
+        PORT = '5000'
     }
 
     stages {
         stage('Clone') {
             steps {
+                cleanWs()
                 git branch: 'main',
                     url: 'https://github.com/kkrish-77/DevOps-Jenk-Project.git'
             }
@@ -15,15 +17,27 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'docker build -t flask-app .'
+                sh '''
+                sudo chmod 666 /var/run/docker.sock || true
+                
+                docker build -t ${APP_NAME} .
+                '''
             }
         }
 
         stage('Deploy') {
             steps {
                 sh '''
-                docker rm -f flask-app || true
-                docker run -d -p 5000:5000 --name flask-app flask-app
+                docker stop ${APP_NAME} || true
+                docker rm ${APP_NAME} || true
+                
+                docker run -d --name ${APP_NAME} \
+                    -p ${PORT}:${PORT} \
+                    --restart unless-stopped \
+                    ${APP_NAME}
+                
+                docker ps | grep ${APP_NAME}
+                
                 echo "Application deployed successfully!"
                 '''
             }
@@ -32,17 +46,14 @@ pipeline {
 
     post {
         success {
-            echo 'Visit http://localhost:5000 to see your application'
+            echo "Application is running at http://localhost:${PORT}"
         }
         failure {
-            script {
-                if (isUnix()) {
-                    sh 'docker rm -f flask-app || true'
-                } else {
-                    bat 'docker rm -f flask-app || true'
-                }
-            }
-            echo 'Pipeline failed! Cleaned up containers.'
+            sh '''
+            docker stop ${APP_NAME} || true
+            docker rm ${APP_NAME} || true
+            '''
+            echo 'Deployment failed - cleaned up containers'
         }
     }
 }
