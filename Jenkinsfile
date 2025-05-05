@@ -1,43 +1,42 @@
 pipeline {
     agent any
-    
+
+    environment {
+        IMAGE_NAME = 'flask-app-local'
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                // Checkout code from Codeberg repository
-                checkout scm
+                git 'https://github.com/kkrish-77/DevOps-Jenk-Project.git'
             }
         }
-        
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'pip install -r requirements.txt'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                script {
-                    def imageName = "flask-server-cicd"
-                    sh "docker build -t ${imageName} ."
-                }
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
-        
-        stage('Deploy Container') {
+
+        stage('Run Container') {
             steps {
-                script {
-                    def containerName = "flask-server-cicd"
-                    // Stop and remove any existing container
-                    sh "docker stop ${containerName} || true"
-                    sh "docker rm ${containerName} || true"
-                    // Run the new container
-                    sh "docker run -d --name ${containerName} -p 5000:5000 flask-server-cicd"
-                }
+                // Stop old container if it exists
+                sh 'docker rm -f flask-app || true'
+                // Run new container
+                sh 'docker run -d -p 5000:5000 --name flask-app $IMAGE_NAME'
             }
         }
     }
-    
+
     post {
         success {
-            echo 'Server deployed in Docker container successfully!'
-        }
-        failure {
-            echo 'Docker deployment failed!'
+            echo 'App is running on http://localhost:5000'
         }
     }
-} 
+}
