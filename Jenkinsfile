@@ -1,59 +1,32 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'docker:latest'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     environment {
         APP_NAME = 'flask-app'
-        PORT = '5000'
     }
 
     stages {
-        stage('Clone') {
+        stage('Clone Repository') {
             steps {
-                cleanWs()
-                git branch: 'main',
-                    url: 'https://github.com/kkrish-77/DevOps-Jenk-Project.git'
+                git 'https://github.com/kkrish-77/DevOps-Jenk-Project.git'
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                sh '''
-                sudo chmod 666 /var/run/docker.sock || true
-                
-                docker build -t ${APP_NAME} .
-                '''
+                sh 'docker build -t $APP_NAME .'
             }
         }
 
-        stage('Deploy') {
+        stage('Run Container (Optional)') {
             steps {
-                sh '''
-                docker stop ${APP_NAME} || true
-                docker rm ${APP_NAME} || true
-                
-                docker run -d --name ${APP_NAME} \
-                    -p ${PORT}:${PORT} \
-                    --restart unless-stopped \
-                    ${APP_NAME}
-                
-                docker ps | grep ${APP_NAME}
-                
-                echo "Application deployed successfully!"
-                '''
+                sh 'docker run -d --name ${APP_NAME} -p 5000:5000 $APP_NAME'
             }
-        }
-    }
-
-    post {
-        success {
-            echo "Application is running at http://localhost:${PORT}"
-        }
-        failure {
-            sh '''
-            docker stop ${APP_NAME} || true
-            docker rm ${APP_NAME} || true
-            '''
-            echo 'Deployment failed - cleaned up containers'
         }
     }
 }
