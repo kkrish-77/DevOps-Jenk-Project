@@ -20,5 +20,8 @@ pipeline {
 
         stage('Run Container (Optional)') {
             steps {
-                sh 'docker run -
-
+                sh 'docker run -d --name ${APP_NAME} -p 5000:5000 $APP_NAME'
+            }
+        }
+    }
+}
