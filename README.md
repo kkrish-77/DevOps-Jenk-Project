@@ -1,4 +1,3 @@
-# Simple Flask Server with CI/CD Pipeline
 
 # Jenkins CI/CD Pipeline for Flask App 🚀
 
