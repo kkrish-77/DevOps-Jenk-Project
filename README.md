@@ -18,9 +18,9 @@ This project demonstrates a simple CI/CD pipeline using **Jenkins** to:
 
 1. **Clone Repository**  
 2. **Build Docker Image**  
-3. **Run Container** (optional)
+3. **Run Container** 
 
-## 🐳 Quick Docker Run (Optional)
+## 🐳 Quick Docker Run 
 
 ```bash
 docker build -t flask-app .
